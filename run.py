@@ -1,14 +1,17 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 
 from forms import RegistrationForm, LoginForm
 from datetime import datetime
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
-# app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = 'arbitrarySecretKey'
+
 Bcrypt = Bcrypt(app)
+login_manager = LoginManager(app)
 
 db = SQLAlchemy(app)
 
@@ -26,28 +29,13 @@ class Todo(db.Model):
         return '<Task %r>' % self.id
 
 
-class User(db.Model):
+class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(200), nullable=False)
     password = db.Column(db.String(200), nullable=False)
-    email = db.Column(db.String(200), nullable=False)
-    date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
-    posts = db.relationship('Post', backref='author', lazy=True)
 
     def __repr__(self):
         return '<User %r>' % self.id
-
-
-class Post(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100), nullable=False)
-    date_posted = db.Column(db.DateTime, nullable=False,
-                            default=datetime.utcnow)
-    content = db.Column(db.Text, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-
-    def __repr__(self):
-        return f"Post('{self.title}', '{self.date_posted}')"
 
 
 # Routes
@@ -104,28 +92,55 @@ def update(id):
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'GET':
-        return render_template('register.html', title='Register')
+        form = RegistrationForm()
+        return render_template('register.html', title='Register', form=form)
 
-    form = RegistrationForm()
     # if post request
     if request.method == 'POST':
-        if form.validate_on_submit():
-            hashed_password = bcrypt.generate_password_hash(
-                form.password.data).decode('utf-8')
-            user = User(username=form.username.data,
-                        email=form.email.data, password=hashed_password)
-            db.session.add(user)
-            db.session.commit()
-            flash(f'Account created for {form.username.data}!', 'success')
-            return redirect(url_for('login'))
-
-    return render_template('register.html', title='Register', form=form)
+        username = request.form.get('username')
+        password = request.form.get('password')
+        hashed_password = Bcrypt.generate_password_hash(
+            password).decode('utf-8')
+        user = User(username=username, password=hashed_password)
+        db.session.add(user)
+        db.session.commit()
+        flash(f'Account created for {username}!', 'success')
+        return redirect(url_for('login'))
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'GET':
         return render_template('login.html', title='Login')
+
+    # If post request
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        user = User.query.filter_by(username=username).first()
+
+        if user and bcrypt.check_password_hash(user.password, password):
+            # Valid credentials, log user in and redirect to homepage
+            flash(f'Logged in as {username}!', 'success')
+            login_user(user, remember=form.remember.data)
+            return redirect(url_for('index'))
+        else:
+            # Invalid credentials, show error message
+            flash('Invalid username or password', 'error')
+            return redirect(url_for('login'))
+
+
+@app.route('/admin')
+def admin():
+    users = User.query.order_by(User.username).all()
+    return render_template('admin.html', users=users)
+
+# Login Manager
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 
 if __name__ == '__main__':

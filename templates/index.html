@@ -2,6 +2,14 @@
 
 {% block head %}
 <title>Task Master</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+
+<link rel="canonical" href="https://getbootstrap.com/docs/5.0/examples/sign-in/">
+<link href="../static/css/bootstrap.min.css" rel="stylesheet">
+<!-- Set favicon to ../static/favicon.ico -->
+<link rel="icon" href="../static/favicon.ico" type="image/x-icon">
 {% endblock %}
 
 {% block body %}
@@ -20,6 +28,7 @@
             <form action="/" method="POST">
                 <!-- Prompt the following but not with form-controll as it's too wide -->
                 <!-- title, content -->
+
                 <input type="text" name="title" id="title" placeholder="Title" class="form-text">
                 <input type="text" name="content" id="content" placeholder="Content" class="form-text">
                 <input type="text" name="user" id="content" placeholder="User" class="form-text">

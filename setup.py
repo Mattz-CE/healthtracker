@@ -1,5 +1,5 @@
 # setup DB
-from app import db, app
+from run import db, app
 
 with app.app_context():
     db.create_all()

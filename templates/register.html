@@ -2,12 +2,8 @@
 <html lang="en">
 
 <head>
-    <!-- Design by foolishdeveloper.com -->
     <title>Register</title>
 
-    <!-- <link rel="preconnect" href="https://fonts.gstatic.com">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"> -->
-    <!-- <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet"> -->
     <link rel="stylesheet" href="../static/css/login.css">
     <script>function show_hide_password(target) {
             var input = document.getElementById('password-input');
@@ -38,12 +34,13 @@
                     <h2>Register</h2>
                     <form action="" method="POST">
                         <div class="inputBx">
-                            <input type="text" required="required">
-                            <span>Register</span>
+                            <input name="username" type="text" required="required">
+                            <span>User Name</span>
                             <i class="fas fa-user-circle"></i>
                         </div>
                         <div class="inputBx password">
-                            <input id="password-input" type="password" name="password" required="required">
+                            <input id="password-input" id="password" type="password" name="password"
+                                required="required">
                             <span>Password</span>
                             <a href="#" class="password-control" onclick="return show_hide_password(this);"></a>
                             <i class="fas fa-key"></i>

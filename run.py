@@ -10,7 +10,7 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SECRET_KEY'] = 'arbitrarySecretKey'
 
-Bcrypt = Bcrypt(app)
+bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 
 db = SQLAlchemy(app)
@@ -91,6 +91,9 @@ def update(id):
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('admin'))
+
     if request.method == 'GET':
         form = RegistrationForm()
         return render_template('register.html', title='Register', form=form)
@@ -99,7 +102,7 @@ def register():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
-        hashed_password = Bcrypt.generate_password_hash(
+        hashed_password = bcrypt.generate_password_hash(
             password).decode('utf-8')
         user = User(username=username, password=hashed_password)
         db.session.add(user)
@@ -110,8 +113,12 @@ def register():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    form = LoginForm()
+    if current_user.is_authenticated:
+        return redirect(url_for('admin'))
+
     if request.method == 'GET':
-        return render_template('login.html', title='Login')
+        return render_template('login.html', form=form, title='Login')
 
     # If post request
     if request.method == 'POST':
@@ -123,11 +130,11 @@ def login():
             # Valid credentials, log user in and redirect to homepage
             flash(f'Logged in as {username}!', 'success')
             login_user(user, remember=form.remember.data)
-            return redirect(url_for('index'))
+            return redirect(url_for('admin'))
         else:
             # Invalid credentials, show error message
-            flash('Invalid username or password', 'error')
-            return redirect(url_for('login'))
+            flash('Login Unsuccessful. Please check username and password', 'danger')
+            return render_template('login.html', form=form, title='Login', login_error=True)
 
 
 @app.route('/admin')
@@ -135,10 +142,17 @@ def admin():
     users = User.query.order_by(User.username).all()
     return render_template('admin.html', users=users)
 
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
+
+
 # Login Manager
 
 
-@login_manager.user_loader
+@ login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 

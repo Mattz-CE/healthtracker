@@ -27,6 +27,9 @@
                     <a class="nav-link active" aria-current="page" href="/">Home</a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" href="/patients">Patients</a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link" href="logout">Logout</a>
                 </li>
             </ul>
@@ -45,6 +48,7 @@
                 <th>ID</th>
                 <th>Username</th>
                 <th>Password</th>
+                <th>Roles</th>
             </tr>
         </thead>
         <tbody>
@@ -53,6 +57,7 @@
                 <td>{{ user.id }}</td>
                 <td>{{ user.username }}</td>
                 <td>{{ user.password }}</td>
+                <td>{{ user.roles }}</td>
             </tr>
             {% endfor %}
         </tbody>

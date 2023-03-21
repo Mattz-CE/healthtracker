@@ -33,6 +33,7 @@ class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(200), nullable=False)
     password = db.Column(db.String(200), nullable=False)
+    roles = db.Column(db.String(200), nullable=False)
 
     def __repr__(self):
         return '<User %r>' % self.id
@@ -102,9 +103,10 @@ def register():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        roles = request.form.get('roles')
         hashed_password = bcrypt.generate_password_hash(
             password).decode('utf-8')
-        user = User(username=username, password=hashed_password)
+        user = User(username=username, password=hashed_password, roles=roles)
         db.session.add(user)
         db.session.commit()
         flash(f'Account created for {username}!', 'success')
@@ -158,4 +160,4 @@ def load_user(user_id):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5001)

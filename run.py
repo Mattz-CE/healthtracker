@@ -1,3 +1,5 @@
+import sys
+
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
@@ -6,33 +8,28 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from forms import RegistrationForm, LoginForm
 from datetime import datetime
 
+# Initialize app
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 app.config['SECRET_KEY'] = 'arbitrarySecretKey'
 
+db = SQLAlchemy(app)
+
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 
-db = SQLAlchemy(app)
+# Word around so autopep8 E402 doesn't formats import after app = Flask(__name__)
+if not 'models' in sys.modules:
+    pass
 
 # Models
 
 
-class Todo(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    content = db.Column(db.String(200), nullable=False)
-    completed = db.Column(db.Integer, default=0)
-    date_created = db.Column(db.DateTime, default=db.func.current_timestamp())
-
-    def __repr__(self):
-        return '<Task %r>' % self.id
-
-
-class User(db.Model, UserMixin):
+class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(200), nullable=False)
     password = db.Column(db.String(200), nullable=False)
+    roles = db.Column(db.String(200), nullable=False)
 
     def __repr__(self):
         return '<User %r>' % self.id
@@ -42,22 +39,10 @@ class User(db.Model, UserMixin):
 
 @app.route('/', methods=['POST', 'GET'])
 def index():
-    if request.method == 'POST':
-        task_title = request.form['title']
-        task_content = request.form['content']
-        new_task = Todo(title=task_title, content=task_content)
-
-        try:
-            db.session.add(new_task)
-            db.session.commit()
-            return redirect('/')
-        except:
-            return 'There was an issue adding your task'
-        return 's'
+    if not current_user.is_authenticated:
+        return redirect(url_for('login'))
     else:
-        tasks = Todo.query.order_by(Todo.date_created).all()
-        render = render_template('index.html', tasks=tasks)
-        return render
+        return redirect(url_for('admin'))
 
 
 @app.route('/delete/<int:id>', methods=['GET', 'POST'])
@@ -102,9 +87,10 @@ def register():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        roles = request.form.get('roles')
         hashed_password = bcrypt.generate_password_hash(
             password).decode('utf-8')
-        user = User(username=username, password=hashed_password)
+        user = User(username=username, password=hashed_password, roles=roles)
         db.session.add(user)
         db.session.commit()
         flash(f'Account created for {username}!', 'success')
@@ -149,13 +135,10 @@ def logout():
     return redirect(url_for('index'))
 
 
-# Login Manager
-
-
 @ login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5001)
